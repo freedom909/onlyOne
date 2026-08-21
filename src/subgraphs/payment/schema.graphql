@@ -1,0 +1,122 @@
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.11"
+    import: ["@key", "@shareable", "@external", "@requires", "@provides", "@override", "@inaccessible"]
+  ){
+  query: Query
+  mutation: Mutation
+}
+
+scalar DateTime
+
+# --------------------------
+# PAYMENT TYPES
+# --------------------------
+type Payment @key(fields: "bookingId") {
+  id: ID!
+  tenantId: ID! @shareable
+  bookingId: ID! @shareable
+  patientId: ID! @shareable
+  amount: Float! @shareable
+  paymentProvider:PaymentProvider @shareable
+  transcationId:String! @shareable
+  status: PaymentStatus! @shareable
+  paymentIntentId: String @shareable
+  createdAt: DateTime! @shareable
+  updatedAt: DateTime! @shareable
+}
+
+enum PaymentProvider {
+  MOCK
+  STRIPE
+  PAYPAY
+  SQUARE 
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+
+# --------------------------
+# EXTERNAL TYPES
+# --------------------------
+extend type Patient @key(fields: "id") {
+  id: ID! @external
+}
+
+extend type Booking @key(fields: "id") {
+  id: ID! @external
+  payment:Payment
+}
+
+# --------------------------
+# RESPONSE TYPES
+# --------------------------
+interface Response {
+  code: Int!
+  success: Boolean!
+  message: String!
+}
+
+type ProcessPaymentResponse implements Response {
+  code: Int! @shareable
+  success: Boolean! @shareable
+  message: String! @shareable
+  payment: Payment @shareable
+}
+
+type RefundResponse implements Response {
+  code: Int! @shareable
+  success: Boolean! @shareable
+  message: String! @shareable
+  refundAmount: Float! @shareable
+}
+
+# --------------------------
+# INPUT TYPES
+# --------------------------
+input ProcessPaymentInput {
+  bookingId: ID!
+  paymentIntentId: String!
+  amount: Float!
+}
+
+input CreatePaymentInput {
+  bookingId: ID!
+  amount: Float!
+    patientId: ID!
+  tenantId: ID!
+}
+
+input RefundInput {
+  paymentId: ID!
+  amount: Float!
+}
+
+# --------------------------
+# QUERIES
+# --------------------------
+type Query {
+  payment(id: ID!): Payment @shareable
+  paymentsByPatient(patientId: ID!): [Payment!]! @shareable
+  paymentByBooking(bookingId: ID!): Payment @shareable  
+}
+# --------------------------
+# MUTATIONS
+# --------------------------
+type Mutation {
+  processPayment(paymentId: ID!): ProcessPaymentResponse! @shareable
+  processRefund(input: RefundInput!): RefundResponse! @shareable
+  confirmPayment(paymentId: ID!): ProcessPaymentResponse! @shareable
+  createPayment(input: CreatePaymentInput!): Payment! @shareable
+  cancelPayment( paymentId: ID! reason: String): Payment! @shareable
+  failPayment(paymentId: ID!): ProcessPaymentResponse! @shareable
+}
+
+

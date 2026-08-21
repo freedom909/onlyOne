@@ -1,0 +1,106 @@
+extend schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.8"
+    import: ["@key", "@shareable", "@external"]
+  )
+
+scalar DateTime
+
+# -----------------------------------
+# Cart Entity
+# -----------------------------------
+type Cart @key(fields: "id") {
+  id: ID!
+  patientId: ID!
+  checkInDate: DateTime
+  checkOutDate: DateTime
+  price: Float!
+  cartItems: [CartItem!]!
+}
+
+type CartItem {
+  id: ID!
+  cartId: ID!
+  listingId: ID!
+  quantity: Int!
+  price: Float!
+  checkInDate: DateTime
+  checkOutDate: DateTime
+}
+
+# -----------------------------------
+# Federation References
+# -----------------------------------
+extend type User @key(fields: "id") {
+  id: ID! @external
+}
+
+extend type Listing @key(fields: "id") {
+  id: ID! @external
+}
+
+# -----------------------------------
+# Response Types
+# -----------------------------------
+interface MutationResponse {
+  code: Int!
+  success: Boolean!
+  message: String!
+}
+
+type CartResponse implements MutationResponse {
+  code: Int!
+  success: Boolean!
+  message: String!
+  cart: Cart
+}
+
+# -----------------------------------
+# Inputs
+# -----------------------------------
+input CreateCartInput {
+  patientId: ID!
+  checkInDate: DateTime
+  checkOutDate: DateTime
+}
+
+input AddToCartInput {
+  cartId: ID!
+  patientId: ID!
+  listingId: ID!
+  quantity: Int
+  price: Float
+  checkInDate: DateTime
+  checkOutDate: DateTime
+}
+
+input UpdateCartItemInput {
+  cartId: ID!
+  itemId: ID!
+  quantity: Int
+  price: Float
+}
+
+input RemoveFromCartInput {
+  cartId: ID!
+  itemId: ID!
+}
+
+# -----------------------------------
+# Queries
+# -----------------------------------
+type Query {
+  getCart(cartId: ID!): Cart
+  getCartsByPatient(patientId: ID!): [Cart!]!
+}
+
+# -----------------------------------
+# Mutations
+# -----------------------------------
+type Mutation {
+  createCart(input: CreateCartInput!): CartResponse!
+  addToCart(input: AddToCartInput!): CartResponse!
+  updateCartItem(input: UpdateCartItemInput!): CartResponse!
+  removeFromCart(input: RemoveFromCartInput!): CartResponse!
+  clearCart(cartId: ID!): CartResponse!
+}

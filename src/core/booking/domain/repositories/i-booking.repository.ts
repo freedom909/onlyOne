@@ -1,0 +1,34 @@
+import { Booking } from "../entities/booking.entity";
+import { BookingStatus } from "../value-objects/booking-status";
+
+export interface BookingPaginatedResult {
+ items: Booking[];
+ total:number;
+ page:number;
+ limit:number;
+ totalPages:number;
+}
+
+
+export interface BookingQuery {
+    page: number;
+    limit: number;
+
+    status?: BookingStatus;
+
+    sortBy?: string;
+    sortOrder?: "ASC" | "DESC";
+}
+
+
+export interface IBookingRepository {
+  findById(id: string): Promise<Booking | null>;
+  save(booking: Booking): Promise<void>;
+  findByTenantId(tenantId:string):Promise<Booking[] >;
+  findLatestBookingByPatientId(patientId:string):Promise<Booking|null>;
+  findByPatientId(patientId: string): Promise<Booking[]>;
+  delete(id: string): Promise<void>;
+  findAll(query:BookingQuery):Promise<BookingPaginatedResult>
+  findByListingOwnerId(ownerId: string): Promise<Booking[]>;
+  findByListingIds(listingIds: string[]): Promise<Booking[]>;
+}

@@ -1,0 +1,27 @@
+schema @link(url: "https://specs.apollo.dev/federation/v2.11", import: ["@key"]){
+  query: Query
+  mutation: Mutation
+}
+
+type AuditLog @key(fields: "id") {
+  id: ID!
+  action: String!
+  userId: ID!
+  resourceId: ID!
+  metadata: String
+  timestamp: String!
+}
+
+type Mutation {
+   recordAuditLog(
+    action: String!
+    userId: ID!
+    resourceId: ID
+    metadata: String
+  ): AuditLog!
+}
+
+type Query {
+  getAuditLog(userId: ID!): AuditLog
+  getAuditLogsByResource(resourceId: ID!): [AuditLog!]!
+}

@@ -1,0 +1,23 @@
+import { Sequelize } from "sequelize";
+
+export const sequelize = new Sequelize(
+
+process.env.MYSQL_DATABASE || "dental",
+
+process.env.MYSQL_USER || "root",
+
+process.env.MYSQL_PASSWORD || "princess",
+
+{
+
+host: process.env.MYSQL_DOCTOR || "localhost",
+
+port: Number(process.env.MYSQL_PORT || 3306),
+
+dialect: "mysql",
+
+logging: console.log,
+
+}
+
+);

@@ -1,0 +1,122 @@
+// src/subgraphs/listing/domain/entities/Listing.ts
+
+
+import { Description } from "../value-objects/description";
+import { Title } from "../value-objects/Title";
+import { Picture } from "./picture";
+
+
+export interface ListingProps {
+  id: string;
+  rawTitle?: string;
+  rawDescription?: string;
+  locationId: string;
+
+  title: Title;
+  description: Description;
+
+  address: string;
+
+  categories: string[];
+  amenityIds: number[];
+
+  numOfBeds: number;
+  numOfPatients: number;
+  numOfBathrooms: number;
+  numOfRooms: number;
+
+  price: number;
+  pricePerNight?: number;
+  pictures: Picture[];
+  isFeatured: boolean;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export class Listing {
+  private props: ListingProps;
+
+  constructor(props: ListingProps) {
+    this.validate(props);
+    this.props = props;
+  }
+
+  // getters
+  get id() { return this.props.id; }
+
+  get title(): string {
+    return this.props.title.getValue();
+  }
+  get ownerId() { return this.props.ownerId; }
+  get description(): string {
+    return this.props.description.getValue();
+  }
+  get locationId() { return this.props.locationId; }
+  get categories() { return this.props.categories; }
+  get amenityIds() { return this.props.amenityIds; }
+  get createdAt() { return this.props.createdAt; }
+  get updatedAt() { return this.props.updatedAt; }
+  get address() { return this.props.address; }
+  get numOfBeds() { return this.props.numOfBeds; }
+  get numOfPatients() { return this.props.numOfPatients; }
+  get numOfBathrooms() { return this.props.numOfBathrooms; }
+  get numOfRooms() { return this.props.numOfRooms; }
+  get price() { return this.props.price; }
+  get pricePerNight() { return this.props.pricePerNight ?? this.props.price; }
+  get pictures() { return this.props.pictures; }//I am not sure here
+  get isFeatured() { return this.props.isFeatured; }
+  get rawTitle() { return this.props.rawTitle; }
+  get rawDescription() {
+    return this.props.rawDescription;
+
+  }
+  // ======================
+  // Business Logic
+  // ======================
+
+  updateTitle(title: string) {
+    this.props.title = new Title(title);
+    this.touch();
+  }
+  updateAddress(address: string) {
+    this.props.address = address;
+    this.touch();
+  }
+
+  updateDescription(desc: string) {
+    this.props.description = new Description(desc);
+    this.touch();
+  }
+
+  // 🔥 AI行为（核心）
+  generateTitlePrompt() {
+    return this.props.title.buildAIPrompt({
+      description: this.description,
+    });
+  }
+
+  generateDescriptionPrompt() {
+    return this.props.description.buildAIPrompt({
+      title: this.title,
+    });
+  }
+
+  applySuggestedTitle(title: string) {
+    this.updateTitle(title);
+  }
+
+  applySuggestedDescription(desc: string) {
+    this.updateDescription(desc);
+  }
+
+  private touch() {
+    this.props.updatedAt = new Date();
+  }
+
+  private validate(props: ListingProps) {
+    if (!props.ownerId) throw new Error("ownerId required");
+    if (!props.locationId) throw new Error("locationId required");
+    // categories may be empty when loaded from DB (join table may have no rows)
+  }
+}

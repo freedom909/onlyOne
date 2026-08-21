@@ -1,0 +1,96 @@
+import "reflect-metadata"
+import dotenv from "dotenv"
+import path from "path"
+import { fileURLToPath } from "url"
+
+// ✅ Define __dirname for ES module scope and load root .env
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
+import express from "express"
+import http from "http"
+import cors from "cors"
+import cookieParser from "cookie-parser"
+
+import { gql } from "graphql-tag"
+import { readFileSync } from "fs"
+
+import { ApolloServer } from "@apollo/server"
+import { expressMiddleware } from "@as-integrations/express4"
+import { buildSubgraphSchema } from "@apollo/subgraph"
+
+import mongoose from "mongoose"
+import { container } from "tsyringe"
+import resolvers from "./resolvers"
+
+import registerAuthDependencies from "./registerAuthDependencies"
+import  registerSecurityDependencies  from "../../modules/container/security.register";
+import registerAuditDependencies from "../../modules/container/audit.register.js"
+import getUserFromContext from "@/infrastructure/auth/getUserFromContext"
+
+
+// ⭐ 注册 DI
+registerAuditDependencies(container)
+registerSecurityDependencies();
+registerAuthDependencies(container)
+console.log("OAuth container loaded")
+console.log(
+  "Auth Subgraph - INTERNAL_SERVICE_TOKEN env var at startup =",
+  process.env.INTERNAL_SERVICE_TOKEN
+);
+      console.log("google_client_id:", 
+ process.env.GOOGLE_CLIENT_ID
+)
+// ⭐ Mongo
+await mongoose.connect(
+  process.env.MONGO_URI || "mongodb://localhost:27017/dental"
+)
+
+// ⭐ schema
+const schemaPath = path.resolve(__dirname, "schema.graphql");
+const typeDefs = gql(
+  readFileSync(schemaPath, "utf-8")
+)
+
+const schema = buildSubgraphSchema([{
+  typeDefs,
+  resolvers,
+}])
+
+// ⭐ Apollo server
+const server = new ApolloServer({
+  schema
+})
+
+await server.start()
+
+const app = express()
+const httpServer = http.createServer(app)
+
+app.use(
+  "/graphql",
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true
+  }),
+  express.json(),
+  cookieParser(),
+  // ✅ Parse gateway-forwarded user from x-gateway-user header (same as account/admin subgraphs)
+  async (req, _res, next) => {
+    (req as any).user = await getUserFromContext(req);
+    next();
+  },
+  expressMiddleware(server, {
+    context: async ({ req, res }) => ({
+      req,
+      res,
+      container,
+      user: (req as any).user ?? null
+    })
+  })
+)
+
+httpServer.listen(4010, () => {
+  console.log("🔐 Auth subgraph running at http://localhost:4010/graphql")
+})

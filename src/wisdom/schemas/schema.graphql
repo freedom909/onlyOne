@@ -1,0 +1,59 @@
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.11",
+    import: ["@key", "@shareable", "@external"]
+  ) {
+  query: Query
+  mutation: Mutation
+}
+
+scalar DateTime
+scalar JSON
+type Query {
+  _empty: String @shareable
+}
+
+input ChatInput {
+  message: String!
+}
+
+type Mutation {
+  chat(input: ChatInput!): ChatResponse!
+}
+
+type ChatResponse {
+
+  success: Boolean!
+
+  summary: String
+
+  artifacts: [Artifact!]!
+}
+
+type Artifact {
+  type: ArtifactType!
+  content: JSON!
+}
+
+enum ArtifactType {
+  LISTING_SEARCH_RESULT
+  LISTING_SELECTED
+  DATES_SELECTED
+  CUSTOMER_COUNT_SELECTED
+  CONTACT_SET
+  SPECIAL_REQUEST_SET
+  BOOKING_GET
+  BOOKING_COMPLETED
+  BOOKING_CREATED
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  TITLE
+  DESCRIPTION
+  PRICE
+  SEO
+  TIPS
+  REVIEW
+  BOOKING
+  AVAILABILITY_CHECK
+  LISTING
+}

@@ -1,0 +1,133 @@
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.11"
+    import: ["@key", "@shareable", "@external"]
+  ) {
+  query: Query
+  mutation: Mutation
+}
+
+scalar DateTime
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum MembershipStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+  REMOVED
+}
+
+enum TenantRole {
+  OWNER
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+  HYGIENIST
+  ACCOUNTANT
+  MANAGER
+}
+
+extend type User @key(fields: "id") {
+  id: ID! @external
+}
+
+type Tenant @key(fields: "id") {
+  id: ID! @shareable
+  name: String! @shareable
+  slug: String!
+  status: TenantStatus!
+
+  owner: User!
+
+  memberships: [TenantMembership!]!
+
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type TenantMembership {
+  id: ID!
+
+  user: User!
+  tenant: Tenant!
+
+  role: TenantRole!
+  status: MembershipStatus!
+
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type Mutation {
+  createTenant(input: CreateTenantInput!): Tenant!
+
+  updateTenant(
+    id: ID!
+    name: String!
+  ): Tenant!
+
+  suspendTenant(id: ID!): Tenant!
+
+  switchTenant(
+    tenantId: ID!
+  ): SwitchTenantPayload!
+
+  inviteMember(
+    input: InviteMemberInput!
+  ): TenantMembership!
+
+  updateMemberRole(
+    membershipId: ID!
+    role: TenantRole!
+  ): TenantMembership!
+
+  removeMember(
+    membershipId: ID!
+  ): Boolean!
+}
+
+input CreateTenantInput {
+  name: String!
+  slug: String!
+}
+
+input InviteMemberInput {
+  tenantId: ID!
+  email: String!
+  role: TenantRole!
+}
+
+input TenantFilterInput {
+  keyword: String
+  status: TenantStatus
+  limit: Int
+  offset: Int
+}
+
+type TenantConnection {
+  items: [Tenant!]!
+  total: Int!
+}
+
+type SwitchTenantPayload {
+  tenant: Tenant!
+  activeTenantId: ID!
+  allowedTenantIds: [ID!]!
+}
+
+type Query {
+  getTenant(id: ID!): Tenant
+
+  getTenants(
+    filter: TenantFilterInput
+  ): TenantConnection!
+
+  myMemberships: [TenantMembership!]!
+
+  getCurrentTenant: Tenant
+}

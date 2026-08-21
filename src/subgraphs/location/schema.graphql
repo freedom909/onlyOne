@@ -1,0 +1,113 @@
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.11",
+    import: ["@key", "@shareable", "@external"]
+  ){
+  query: Query
+  mutation: Mutation
+}
+
+scalar DateTime
+
+
+### User Types
+extend type User @key(fields: "id") {
+  id: ID! @external
+}
+
+extend type Owner @key(fields: "id") {
+  
+  id: ID! @external
+  listings: [Listing!]@shareable
+}
+
+extend type Patient @key(fields: "id") {
+  id: ID! @external
+  overallRating: Float @shareable
+  bookings: [Booking!] @shareable
+  listings: [Listing!] @shareable
+}
+
+
+type Listing @key(fields: "id") {
+  id: ID! @shareable
+}
+
+type Booking @key(fields: "id") {
+  id: ID! @shareable
+}
+
+type Location @key(fields: "id") {
+  id: ID! @shareable
+  name: String! @shareable
+  country: String! @shareable
+  zip: String! @shareable
+  city: String! @shareable
+  state: String! @shareable
+  address: String! @shareable
+  latitude: Float! @shareable
+  longitude: Float! @shareable
+  radius: Int! @shareable
+  units: String! @shareable
+}
+
+input CreateLocationInput {
+  name: String!
+  latitude: Float!
+  radius: Int!
+  longitude: Float!
+  address: String!
+  city: String!
+  state: String!
+  country: String!
+  zip: String!
+  units: String!
+}
+
+input UpdateLocationInput {
+  id: ID!
+  name: String
+  latitude: Float  
+  longitude: Float
+  radius: Int
+  address: String
+  city: String
+  state: String
+  country: String
+  zip: String
+  units: String
+}
+
+interface Response {
+  code: Int!
+  success: Boolean!
+  message: String!
+}
+
+type CreateLocationResponse implements Response {
+  code: Int! @shareable
+  success: Boolean! @shareable
+  message: String! @shareable
+  location: Location! @shareable
+}
+
+type UpdateLocationResponse implements Response {
+  code: Int! @shareable
+  success: Boolean! @shareable
+  message: String! @shareable
+  location: Location @shareable
+}
+
+type Review @key(fields: "id") {
+  id: ID! @shareable
+}
+
+type Query {
+  locations(locationId: ID): [Location!]! @shareable
+}
+
+type Mutation {
+  createLocation(input: CreateLocationInput!): CreateLocationResponse! @shareable
+  updateLocation(locationId: ID!, location: UpdateLocationInput): UpdateLocationResponse! @shareable
+  deleteLocation(locationId: ID!): Boolean! @shareable
+}

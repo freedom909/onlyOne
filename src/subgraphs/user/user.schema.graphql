@@ -1,0 +1,179 @@
+schema
+  @link(
+    url: "https://specs.apollo.dev/federation/v2.11"
+    import: ["@key", "@shareable", "@external"]
+  ) {
+  query: Query
+  mutation: Mutation
+}
+
+scalar DateTime
+
+# ======================
+# Federation References
+# ======================
+
+extend type Tenant @key(fields: "id") {
+  id: ID! @external
+}
+
+extend type Listing @key(fields: "id") {
+  id: ID! @external
+}
+
+extend type Booking @key(fields: "id") {
+  id: ID! @external
+}
+
+# ======================
+# User
+# ======================
+
+type User @key(fields: "id") {
+  id: ID!
+  email: String!
+  name: String
+  picture: String
+  role: UserRole! @shareable
+  status: AccountStatus! @shareable
+  immutable: Boolean!   # 默认 false
+  lastLoginAt: DateTime @shareable
+  isActive: Boolean! @shareable
+  avatar: String
+  profile: Profile! @shareable
+  tenant: Tenant @shareable
+
+  bookings: [Booking!]! @shareable
+  createdAt: DateTime! @shareable
+  updatedAt: DateTime! @shareable
+}
+
+# ======================
+# OAuth Credentials
+# ======================
+
+type Credential @key(fields: "id") {
+  id: ID!
+
+  user: User!
+
+  provider: OAuthProvider!
+
+  providerUserId: String!
+
+  createdAt: DateTime!
+}
+
+# ======================
+# Profile
+# ======================
+
+type Profile @shareable {
+  name: String
+  avatar: String
+  email: String
+}
+
+# ======================
+# Role
+# ======================
+
+enum UserRole {
+  GUEST
+  DOCTOR
+  CUSTOMER
+  STAFF
+  MODERATOR
+  AGENT
+  OWNER
+  ADMIN
+  SUPER_ADMIN
+  TENANT_ADMIN
+}
+
+# ======================
+# Status
+# ======================
+
+enum AccountStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+# ======================
+# OAuth Providers
+# ======================
+
+enum OAuthProvider {
+  GOOGLE
+  GITHUB
+  FACEBOOK
+  APPLE
+  LINE
+}
+
+# ======================
+# Queries
+# ======================
+
+type Query {
+  currentUser: User!
+  user(id: ID!): User
+
+  userByEmail(email: String!): User
+
+  users(limit: Int, offset: Int): [User!]!
+
+  userCount: Int!
+
+  tenantsByUser(userId: ID!): [Tenant!]!
+}
+
+# ======================
+# Mutations
+# ======================
+
+type Mutation {
+  becomeHost:User!
+  createUser(input: CreateUserInput!): User!
+
+  createOAuthUser(input: CreateOAuthUserInput!): User!
+
+  updateProfile(
+    userId: ID!
+    name: String
+    avatar: String
+  ): User!
+
+  updateLastLogin(userId: ID!): Boolean!
+
+  deactivateUser(userId: ID!): Boolean!
+}
+
+# ======================
+# Inputs
+# ======================
+
+input CreateUserInput {
+  email: String!
+  name: String!
+  
+  role: UserRole = CUSTOMER
+}
+
+input CreateOAuthUserInput {
+  email: String!
+  role: UserRole = CUSTOMER
+  provider: OAuthProvider!
+  profile: ProfileInput
+  
+}
+
+input ProfileInput {
+  email: String
+  name: String
+  avatar: String
+}

@@ -1,0 +1,59 @@
+// FILE: src/subgraphs/booking/infrastructure/mappers/booking.mapper.ts
+
+import { Booking} from "../../domain/entities/booking.entity";
+import { BookingState } from "../../domain/state/booking-state";
+import { BookingLifecycleStatus } from "../../domain/value-objects/booking-lifecycle.status";
+import { DateRange } from "../../domain/value-objects/date-range.vo";
+import { BookingModel } from "../models/booking.model";
+
+export class BookingMapper {
+
+  static toDomain(model: BookingModel): Booking {
+    return Booking.restore({
+      id: model.id,
+
+      reservationNumber: model.reservationNumber,
+      
+      patientId: model.patientId,
+      tenantId: model.tenantId,
+      listingId: model.listingId,
+
+      dateRange: new DateRange(
+        model.checkInDate,
+        model.checkOutDate
+      ),
+
+      price: model.price,
+
+      status: model.status,
+      createdAt: undefined,
+      lifecycleStatus: BookingLifecycleStatus.UPCOMING
+    }) 
+  };
+
+
+  // Domain → DB 
+  static toPersistence(booking: Booking) {
+    return {
+      id: booking.id,
+
+      reservationNumber: booking.reservationNumber,
+      patientId: booking.patientId,
+
+      listingId: booking.listingId,
+
+      checkInDate:
+        booking.dateRange.checkInDate,
+      tenantId: booking.tenantId,
+      checkOutDate:
+        booking.dateRange.checkOutDate,
+
+      price:
+        booking.price,
+
+      status:
+        booking.status,
+
+    };
+  }
+}
